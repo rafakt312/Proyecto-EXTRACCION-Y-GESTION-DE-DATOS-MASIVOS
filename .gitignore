@@ -25,7 +25,7 @@ venv/
 logs/
 
 # Project data and outputs (large / generated)
-
+data/*.csv
 data/*.csv.gz
 data/**/*.csv
 data/**/*.csv.gz
