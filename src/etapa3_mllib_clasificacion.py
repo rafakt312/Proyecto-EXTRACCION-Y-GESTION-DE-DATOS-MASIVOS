@@ -22,7 +22,7 @@ from datetime import datetime
 import argparse
 
 
-# Paths/config (aligned with docker-compose mounts)
+
 DATA_PATH = "/opt/spark-data/"
 INCIDENT_FILE = "Individual_Incident_2020.csv"
 

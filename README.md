@@ -1,119 +1,64 @@
-📖 README.md: Proyecto Big Data (NIBRS) - Etapa 2
-Este proyecto demuestra la capacidad de Apache Spark para la Extracción, Procesamiento y Análisis (E-P-A) de grandes volúmenes de datos (más de 136 millones de registros NIBRS) en un ambiente de cluster de 3 nodos (1 Master, 2 Workers) utilizando Docker.
+Proyecto Big Data (NIBRS) — Etapas 2 y 3
 
-🛠️ Requisitos Previos
-Docker y Docker Compose: Deben estar instalados y ejecutándose (Docker Desktop).
+Este proyecto demuestra la capacidad de Apache Spark para la Extracción, Procesamiento y Análisis (E‑P‑A) de datos NIBRS en un clúster de 3 nodos (1 Master, 2 Workers) con Docker.
 
-Datos: El dataset NIBRS (Individual_Incident_XXXX.csv) debe estar ubicado en la carpeta local data/.
+Requisitos
+- Docker Desktop y Docker Compose instalados y corriendo.
+- Dataset: copiar `Individual_Incident_2020.csv` en la carpeta `data/` (host).
 
-Archivos del Proyecto: docker-compose.yml y src/etapa2_nibrs_demo.py deben estar en la carpeta raíz.
+Estructura Relevante
+- `docker-compose.yml`: define master y workers.
+- `src/etapa2_nibrs_demo.py`: demo de agregaciones (Etapa 2).
+- `src/etapa3_mllib_clasificacion.py`: Logistic Regression (Etapa 3).
+- `src/etapa3_mllib_clasificacion_rf.py`: RandomForest (Etapa 3, comparativa).
+- `src/etapa3_report_viz.py`: genera HTML con KPIs, gráficos y comparativa.
+- `docs/Etapa3_Experimento_EPA.md`: documento del experimento (E‑P‑A).
 
-* Guía de Ejecución Paso a Paso
-Sigue estos pasos en la terminal de PowerShell (o Bash) desde la carpeta raíz del proyecto.
+Arranque Del Clúster
+1) Levantar contenedores
+- `docker-compose up -d`
+2) Iniciar master y workers (permisos + daemons)
+- `docker exec -u root spark-master chmod -R 777 /usr/local/spark/`
+- `docker exec spark-master /usr/local/spark/sbin/start-master.sh`
+- `docker exec -u root spark-worker-1 chmod -R 777 /usr/local/spark/`
+- `docker exec spark-worker-1 /usr/local/spark/sbin/start-worker.sh spark://spark-master:7077`
+- `docker exec -u root spark-worker-2 chmod -R 777 /usr/local/spark/`
+- `docker exec spark-worker-2 /usr/local/spark/sbin/start-worker.sh spark://spark-master:7077`
+3) Verificación (UI)
+- Abrir `http://localhost:8080` y confirmar 2 Workers conectados.
 
-Paso 1: Iniciar el Cluster de 3 Nodos
-Este comando levanta los tres contenedores (spark-master, spark-worker-1, spark-worker-2).
+Etapa 2 
+- Ejecutar demo de agregación distribuida:
+- `docker exec spark-master /usr/local/spark/bin/spark-submit /opt/spark-code/etapa2_nibrs_demo.py`
 
-Bash
+Etapa 3 — Clasificación (MLlib)
+- Logistic Regression (LR):
+- `docker exec spark-master /usr/local/spark/bin/spark-submit /opt/spark-code/etapa3_mllib_clasificacion.py`
+- RandomForest (RF):
+- `docker exec spark-master /usr/local/spark/bin/spark-submit /opt/spark-code/etapa3_mllib_clasificacion_rf.py`
 
-docker-compose up -d
-Paso 2: Aplicar Permisos y Conectar el Master (CRÍTICO)
-Debido a problemas de permisos en la imagen base de Jupyter, los demonios de Spark fallan al iniciar. Estos comandos corrigen los permisos como root y fuerzan el inicio del Master.
+Salidas y Reportes
+- Carpeta `./data/reports`:
+  - `etapa3_summary.json` y `etapa3_summary.txt` (LR): métricas, tiempos por fase y tamaños de datos.
+  - `etapa3_summary_rf.json` y `etapa3_summary_rf.txt` (RF): métricas y tiempos.
+  - `incidente_type_distribution.csv`: distribución de etiquetas (Top 10).
+  - `confusion_lr.csv` y `per_class_metrics_lr.csv`: matriz y métricas por clase (LR, si re‑ejecutamos el script actual).
+  - `confusion_rf.csv` y `per_class_metrics_rf.csv`: matriz y métricas por clase (RF).
 
-Corregir Permisos del Master: Crea la carpeta de logs y da permisos de escritura.
+Visualización (HTML)
+- Generar HTMLs:
+- `docker exec spark-master python /opt/spark-code/etapa3_report_viz.py`
+- Abrir en el host:
+  - `data/reports/etapa3_report.html`.
+  - `data/reports/etapa3_report_compare.html`.
+- Imágenes en `data/reports/figures/`:
+  - `label_distribution.png`, `timings.png`, `algos_compare.png`.
 
-Bash
+Reinicio Limpio
+- `docker-compose down`
+- `docker-compose up -d`
+- Repetir inicio de master/workers.
 
-docker exec -u root spark-master chmod -R 777 /usr/local/spark/
-Iniciar el Master Daemon:
-
-Bash
-
-docker exec spark-master /usr/local/spark/sbin/start-master.sh
-Paso 3: Conectar y Activar los 2 Workers
-Ahora que el Master está estable, activamos y conectamos los dos Workers, asegurándonos de que ambos se registren en http://localhost:8080.
-
-Corregir Permisos del Worker 1:
-
-Bash
-
-docker exec -u root spark-worker-1 chmod -R 777 /usr/local/spark/
-Conectar Worker 1 al Master:
-
-Bash
-
-docker exec spark-worker-1 /usr/local/spark/sbin/start-worker.sh spark://spark-master:7077
-Corregir Permisos del Worker 2:
-
-Bash
-
-docker exec -u root spark-worker-2 chmod -R 777 /usr/local/spark/
-Conectar Worker 2 al Master:
-
-Bash
-
-docker exec spark-worker-2 /usr/local/spark/sbin/start-worker.sh spark://spark-master:7077
-Verificación:  http://localhost:8080. 
-
-
-Paso 4: Ejecutar el Script de Análisis Distribuido
-Este comando ejecuta el script de PySpark, el cual leerá los  millones de registros y forzará la agregación distribuida (GROUP BY y SUM) en los 2 Workers.
-
-Bash
-
-docker exec -it spark-master /usr/local/spark/bin/spark-submit /opt/spark-code/etapa2_nibrs_demo.py
-⏱️ NOTA: La ejecución de este script puede tomar varios minutos debido al volumen de datos . La aplicación se mostrará como RUNNING en la Spark UI.
-
-🧹 Limpieza
-Para detener el cluster y liberar los puertos:
-
-Bash
----
-# Etapa 3
-
-docker-compose down
-
-Reinicio limpio del cluster
-Si deseas reiniciar desde cero antes de correr Etapa 3:
-
-Bash
-
-docker-compose down
-docker-compose up -d
-docker exec -u root spark-master chmod -R 777 /usr/local/spark/
-docker exec spark-master /usr/local/spark/sbin/start-master.sh
-docker exec -u root spark-worker-1 chmod -R 777 /usr/local/spark/
-docker exec spark-worker-1 /usr/local/spark/sbin/start-worker.sh spark://spark-master:7077
-docker exec -u root spark-worker-2 chmod -R 777 /usr/local/spark/
-docker exec spark-worker-2 /usr/local/spark/sbin/start-worker.sh spark://spark-master:7077
-
-Paso 5 (opcional): Ejecutar Etapa 3 - Clasificación (MLlib)
-Ejecuta el script de clasificación supervisada que entrena un modelo multinomial (Logistic Regression) y guarda el pipeline en /opt/spark-data/models.
-
-Bash
-
-docker exec -it spark-master /usr/local/spark/bin/spark-submit /opt/spark-code/etapa3_mllib_clasificacion.py
-
-Para entrenar con RandomForestClassifier (RF) y generar sus reportes:
-
-Bash
-
-docker exec -it spark-master /usr/local/spark/bin/spark-submit /opt/spark-code/etapa3_mllib_clasificacion_rf.py
-
-Salidas y reportes (para presentación)
-El script genera archivos en la carpeta montada de datos del host `./data/reports`:
-- ./data/reports/etapa3_summary.json: resumen estructurado (métricas, tiempos, tamaños de datos)
-- ./data/reports/etapa3_summary.txt: resumen legible para pegar en informes
-- ./data/reports/incidente_type_distribution.csv: Top 10 de etiquetas con sus cuentas
-El modelo entrenado se guarda en `./data/models/incidente_clf_lr`.
-
-Visualización rápida (HTML)
-Para generar un reporte HTML con gráficos a partir de los reportes anteriores:
-
-Bash
-
-docker exec spark-master python /opt/spark-code/etapa3_report_viz.py
-
-Luego abre en tu máquina (host):
-- ./data/reports/etapa3_report.html
-- Si también ejecutaste RF, se generará comparación en: ./data/reports/etapa3_report_compare.html
+Notas De Rendimiento
+- LR (13 min en 2 workers de 1 core/1 GB c/u; CSV ~1.5 GB).
+- RF (50–60 min con misma configuración; mejor Accuracy/F1-score).
