@@ -1,1 +1,2 @@
 *.csv filter=lfs diff=lfs merge=lfs -text
+data/Individual_Incident_2020.* filter=lfs diff=lfs merge=lfs -text
