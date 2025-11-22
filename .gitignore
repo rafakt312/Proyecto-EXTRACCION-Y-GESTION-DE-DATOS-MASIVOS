@@ -33,7 +33,7 @@ data/*.parquet
 data/**/*.parquet
 data/models/
 data/reports/
-data/nibrs_2020_parquet/
+
 
 # Temporary files
 TMP_LIST
