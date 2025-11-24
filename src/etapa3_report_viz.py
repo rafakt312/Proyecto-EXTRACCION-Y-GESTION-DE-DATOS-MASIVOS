@@ -126,6 +126,30 @@ def generate_html(summary, label_img, timing_img):
     return html_path
 
 
+def write_text_summary(summary, label_img, timing_img):
+    """Escribe un resumen en TXT para la primera ejecución (sin comparativa)."""
+    txt_path = os.path.join(REPORT_DIR, "etapa3_report.txt")
+    acc = summary["metrics"].get("accuracy")
+    f1 = summary["metrics"].get("f1")
+    runtime_sec = summary.get("total_runtime_seconds", 0)
+    runtime_min = runtime_sec / 60.0 if runtime_sec else 0
+    lines = [
+        "Reporte Etapa 3 - Clasificación MLlib (TXT)",
+        f"Fuente: {summary['data_file']}",
+        f"Algoritmo: {summary['algorithm']}",
+        f"Leídos: {summary['records_total']} | Procesados: {summary['records_processed']}",
+        f"Train: {summary['train_rows']} | Test: {summary['test_rows']}",
+        f"Accuracy: {acc:.4f} | F1: {f1:.4f}",
+        f"Duración: {runtime_min:.2f} min ({runtime_sec:.2f} s)",
+        f"Modelo: {summary['model_path']}",
+        f"Figura etiquetas: {label_img}",
+        f"Figura tiempos: {timing_img}",
+    ]
+    with open(txt_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+    return txt_path
+
+
 def generate_compare_html(summary_lr, summary_rf):
     html_path = os.path.join(REPORT_DIR, "etapa3_report_compare.html")
     acc_lr = summary_lr["metrics"].get("accuracy")
@@ -217,7 +241,9 @@ def main():
         summary = lr_json or rf_json
         timing_img = plot_timings(summary.get("timings_seconds", {}))
         html_path = generate_html(summary, label_img, timing_img)
+        txt_path = write_text_summary(summary, label_img, timing_img)
         print(f"Reporte HTML generado en: {html_path}")
+        print(f"Reporte TXT generado en: {txt_path}")
 
 
 if __name__ == "__main__":
