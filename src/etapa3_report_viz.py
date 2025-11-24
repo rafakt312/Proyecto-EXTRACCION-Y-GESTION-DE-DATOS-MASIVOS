@@ -136,6 +136,12 @@ def load_optional_csv(name):
     return df
 
 
+def resolve_col(df, target):
+    """Devuelve el nombre de columna real que coincide con target (case-insensitive, trim)."""
+    cols = {c.strip().upper(): c for c in df.columns}
+    return cols.get(target.upper())
+
+
 def write_text_summary(summary, timing_img, dist_df, theft_df=None, state_df=None):
     """Escribe un resumen en TXT para la primera ejecución (sin comparativa)."""
     txt_path = os.path.join(REPORT_DIR, "etapa3_report.txt")
@@ -150,28 +156,36 @@ def write_text_summary(summary, timing_img, dist_df, theft_df=None, state_df=Non
 
     theft_lines = []
     if theft_df is not None and not theft_df.empty:
-        theft_rows = theft_df.sort_values("count", ascending=False).to_dict("records")
-        theft_lines = [f"  {r['state']}: {r['count']}" for r in theft_rows]
+        state_col = resolve_col(theft_df, "state") or "state"
+        count_col = resolve_col(theft_df, "count") or "count"
+        theft_rows = theft_df.sort_values(count_col, ascending=False).to_dict("records")
+        theft_lines = [f"  {r[state_col]}: {r[count_col]}" for r in theft_rows]
 
     state_lines = []
     per_type_lines = {}
     if state_df is not None and not state_df.empty:
         # Mostrar top combinado
         focus = ["THEFT", "VIOLENCE", "SEX", "DRUG"]
-        cols = [c for c in focus if c in state_df.columns]
+        # Mapear columnas reales
+        col_map = {typ: resolve_col(state_df, typ) for typ in focus}
+        state_col = resolve_col(state_df, "state") or "state"
+        cols = [col_map[typ] for typ in focus if col_map.get(typ)]
         if cols:
-            sdf = state_df[["state"] + cols].copy()
-            order_col = "THEFT" if "THEFT" in cols else cols[0]
+            use_cols = [state_col] + cols
+            sdf = state_df[use_cols].copy()
+            order_col = col_map.get("THEFT") or cols[0]
             sdf = sdf.sort_values(order_col, ascending=False).head(10)
             for _, row in sdf.iterrows():
-                parts = [f"{c}={int(row[c])}" for c in cols]
-                state_lines.append(f"  {row['state']}: " + ", ".join(parts))
+                parts = [f"{typ}={int(row[col_map[typ]])}" for typ in focus if col_map.get(typ)]
+                state_lines.append(f"  {row[state_col]}: " + ", ".join(parts))
         # Per-type lists
         for typ in ["THEFT", "VIOLENCE", "SEX", "DRUG", "OTHER"]:
-            if typ in state_df.columns:
-                sdf = state_df[["state", typ]].copy()
-                sdf = sdf.sort_values(typ, ascending=False).head(10)
-                per_type_lines[typ] = [f"  {row['state']}: {int(row[typ])}" for _, row in sdf.iterrows()]
+            col_name = resolve_col(state_df, typ)
+            state_col = resolve_col(state_df, "state") or "state"
+            if col_name:
+                sdf = state_df[[state_col, col_name]].copy()
+                sdf = sdf.sort_values(col_name, ascending=False).head(10)
+                per_type_lines[typ] = [f"  {row[state_col]}: {int(row[col_name])}" for _, row in sdf.iterrows()]
 
 
     lines = [
