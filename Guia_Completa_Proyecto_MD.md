@@ -20,8 +20,9 @@ Debe pesar aproximadamente **1.5 GB**.
 ---
 
 ## 3. Arrancar Spark con el script incluido
+
 ```bash
-sudo bash scripts/start_spark_cluster.sh
+sudo bash scripts/start_spark_cluster.sh #La contraseña es admin123
 ```
 
 ### ¿Qué hace?

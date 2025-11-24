@@ -372,9 +372,10 @@ def main():
         with open(state_path, "w", encoding="utf-8") as f:
             f.write("state," + ",".join(target_labels) + "\n")
             for r in state_rows:
+                rd = r.asDict()
                 f.write(
                     ",".join(
-                        [str(r["state"])] + [str(int(r.get(lbl, 0))) for lbl in target_labels]
+                        [str(rd.get("state", ""))] + [str(int(rd.get(lbl, 0))) for lbl in target_labels]
                     )
                     + "\n"
                 )
