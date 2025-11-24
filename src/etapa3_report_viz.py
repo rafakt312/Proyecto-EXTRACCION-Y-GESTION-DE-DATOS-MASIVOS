@@ -126,13 +126,18 @@ def generate_html(summary, label_img, timing_img):
     return html_path
 
 
-def write_text_summary(summary, label_img, timing_img):
+def write_text_summary(summary, timing_img, dist_df):
     """Escribe un resumen en TXT para la primera ejecución (sin comparativa)."""
     txt_path = os.path.join(REPORT_DIR, "etapa3_report.txt")
     acc = summary["metrics"].get("accuracy")
     f1 = summary["metrics"].get("f1")
     runtime_sec = summary.get("total_runtime_seconds", 0)
     runtime_min = runtime_sec / 60.0 if runtime_sec else 0
+    timings = summary.get("timings_seconds", {})
+    # Distribución top (usando el CSV cargado)
+    dist_rows = dist_df.sort_values("count", ascending=False).to_dict("records")
+    dist_lines = [f"  {r['INCIDENT_TYPE']}: {r['count']}" for r in dist_rows]
+
     lines = [
         "Reporte Etapa 3 - Clasificación MLlib (TXT)",
         f"Fuente: {summary['data_file']}",
@@ -142,9 +147,24 @@ def write_text_summary(summary, label_img, timing_img):
         f"Accuracy: {acc:.4f} | F1: {f1:.4f}",
         f"Duración: {runtime_min:.2f} min ({runtime_sec:.2f} s)",
         f"Modelo: {summary['model_path']}",
-        f"Figura etiquetas: {label_img}",
-        f"Figura tiempos: {timing_img}",
+        "",
+        "Tiempos por etapa (s):",
     ]
+    if timings:
+        lines.extend([f"  {k}: {v:.2f}" for k, v in timings.items()])
+    else:
+        lines.append("  (No se encontraron timings)")
+
+    lines.append("")
+    lines.append("Distribución INCIDENT_TYPE (ordenada):")
+    if dist_lines:
+        lines.extend(dist_lines)
+    else:
+        lines.append("  (No se encontró distribución)")
+
+    lines.append("")
+    lines.append(f"Figura tiempos: {timing_img}")
+
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
     return txt_path
@@ -241,7 +261,7 @@ def main():
         summary = lr_json or rf_json
         timing_img = plot_timings(summary.get("timings_seconds", {}))
         html_path = generate_html(summary, label_img, timing_img)
-        txt_path = write_text_summary(summary, label_img, timing_img)
+        txt_path = write_text_summary(summary, timing_img, dist_df)
         print(f"Reporte HTML generado en: {html_path}")
         print(f"Reporte TXT generado en: {txt_path}")
 
