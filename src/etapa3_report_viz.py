@@ -126,7 +126,12 @@ def generate_html(summary, label_img, timing_img):
     return html_path
 
 
-def write_text_summary(summary, timing_img, dist_df):
+def load_optional_csv(name):
+    path = os.path.join(REPORT_DIR, name)
+    return pd.read_csv(path) if os.path.exists(path) else None
+
+
+def write_text_summary(summary, timing_img, dist_df, theft_df=None, state_df=None):
     """Escribe un resumen en TXT para la primera ejecución (sin comparativa)."""
     txt_path = os.path.join(REPORT_DIR, "etapa3_report.txt")
     acc = summary["metrics"].get("accuracy")
@@ -137,6 +142,26 @@ def write_text_summary(summary, timing_img, dist_df):
     # Distribución top (usando el CSV cargado)
     dist_rows = dist_df.sort_values("count", ascending=False).to_dict("records")
     dist_lines = [f"  {r['INCIDENT_TYPE']}: {r['count']}" for r in dist_rows]
+
+    theft_lines = []
+    if theft_df is not None and not theft_df.empty:
+        theft_rows = theft_df.sort_values("count", ascending=False).to_dict("records")
+        theft_lines = [f"  {r['state']}: {r['count']}" for r in theft_rows]
+
+    state_lines = []
+    if state_df is not None and not state_df.empty:
+        # Mostrar top 10 por THEFT y VIOLENCE (si existen las columnas)
+        focus = ["THEFT", "VIOLENCE", "SEX", "DRUG"]
+        cols = [c for c in focus if c in state_df.columns]
+        if cols:
+            sdf = state_df[["state"] + cols].copy()
+            # ordenar por THEFT si existe, si no por primera col
+            order_col = "THEFT" if "THEFT" in cols else cols[0]
+            sdf = sdf.sort_values(order_col, ascending=False).head(10)
+            for _, row in sdf.iterrows():
+                parts = [f"{c}={int(row[c])}" for c in cols]
+                state_lines.append(f"  {row['state']}: " + ", ".join(parts))
+
 
     lines = [
         "Reporte Etapa 3 - Clasificación MLlib (TXT)",
@@ -164,6 +189,16 @@ def write_text_summary(summary, timing_img, dist_df):
 
     lines.append("")
     lines.append(f"Figura tiempos: {timing_img}")
+
+    if theft_lines:
+        lines.append("")
+        lines.append("THEFT por estado (ordenado):")
+        lines.extend(theft_lines)
+
+    if state_lines:
+        lines.append("")
+        lines.append("Tipos clave por estado (top 10 ordenado):")
+        lines.extend(state_lines)
 
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
@@ -261,7 +296,9 @@ def main():
         summary = lr_json or rf_json
         timing_img = plot_timings(summary.get("timings_seconds", {}))
         html_path = generate_html(summary, label_img, timing_img)
-        txt_path = write_text_summary(summary, timing_img, dist_df)
+        theft_df = load_optional_csv("theft_by_state.csv")
+        state_df = load_optional_csv("incident_types_by_state.csv")
+        txt_path = write_text_summary(summary, timing_img, dist_df, theft_df, state_df)
         print(f"Reporte HTML generado en: {html_path}")
         print(f"Reporte TXT generado en: {txt_path}")
 

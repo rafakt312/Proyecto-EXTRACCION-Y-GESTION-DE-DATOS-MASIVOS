@@ -340,6 +340,48 @@ def main():
     except Exception as e:
         print(f"ADVERTENCIA: No se pudo escribir distribución: {e}")
 
+    # Distribución por estado para tipos clave
+    try:
+        theft_rows = (
+            df.filter(col("INCIDENT_TYPE") == "THEFT")
+              .groupBy("state")
+              .count()
+              .orderBy(desc("count"))
+              .collect()
+        )
+        theft_path = os.path.join(report_dir, "theft_by_state.csv")
+        with open(theft_path, "w", encoding="utf-8") as f:
+            f.write("state,count\n")
+            for r in theft_rows:
+                f.write(f"{r['state']},{r['count']}\n")
+        print(f"Distribución THEFT por estado guardada en: {theft_path}")
+    except Exception as e:
+        print(f"ADVERTENCIA: No se pudo escribir distribución THEFT por estado: {e}")
+
+    try:
+        target_labels = ["THEFT", "VIOLENCE", "SEX", "DRUG", "OTHER", "MULTIPLE", "KIDNAPPING_TRAFFICKING"]
+        pivot_df = (
+            df.filter(col("INCIDENT_TYPE").isin(target_labels))
+              .groupBy("state")
+              .pivot("INCIDENT_TYPE", target_labels)
+              .count()
+              .fillna(0)
+        )
+        state_rows = pivot_df.collect()
+        state_path = os.path.join(report_dir, "incident_types_by_state.csv")
+        with open(state_path, "w", encoding="utf-8") as f:
+            f.write("state," + ",".join(target_labels) + "\n")
+            for r in state_rows:
+                f.write(
+                    ",".join(
+                        [str(r["state"])] + [str(int(r.get(lbl, 0))) for lbl in target_labels]
+                    )
+                    + "\n"
+                )
+        print(f"Distribución por estado (varios tipos) guardada en: {state_path}")
+    except Exception as e:
+        print(f"ADVERTENCIA: No se pudo escribir distribución por estado: {e}")
+
     # Pipeline y split
     t3 = time.time()
     pipeline = build_pipeline()
