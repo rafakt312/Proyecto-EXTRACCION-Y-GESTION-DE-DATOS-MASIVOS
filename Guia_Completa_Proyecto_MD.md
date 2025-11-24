@@ -1,5 +1,5 @@
 
-# Guía Completa: Kaggle + VM + Spark + Evaluación (2025)
+# Guía Completa
 
 # Ejecución
 
@@ -53,21 +53,11 @@ docker exec spark-master python /opt/spark-code/etapa3_report_viz.py
 
 ## 6. Revisar resultados
 
-### Métricas rápidas
+### Métricas obtenidas
 ```bash
-head -n 30 data/reports/etapa3_summary.txt
+cd data/reports 
+nano etapa3_report.txt
 ```
-
-### Archivos clave en `data/reports/`
-- etapa3_summary.json  
-- etapa3_summary.txt  
-- confusion_lr.csv  
-- per_class_metrics_lr.csv  
-- incident_type_distribution.csv  
-- etapa3_report.html  
-- carpeta `figures/` con PNG generados
-
----
 
 ## 7. Limpieza opcional
 ```bash
