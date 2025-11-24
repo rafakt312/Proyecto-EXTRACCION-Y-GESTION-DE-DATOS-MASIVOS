@@ -64,3 +64,8 @@ nano etapa3_report.txt
 docker-compose down
 ```
 
+
+## 8. Herramientas utilziadas
+Para la ejecución del experimento se utilizó Proxmox VE como plataforma de virtualización, donde se creó y administró una máquina virtual Ubuntu. En Proxmox se emplearon herramientas de gestión de VM, snapshots, consola integrada, monitoreo de recursos y administración de almacenamiento mediante LVM. Dentro del sistema operativo Ubuntu se utilizaron herramientas como APT, Bash, y utilidades del sistema para ampliar el volumen (lvextend, resize2fs).
+
+Sobre este entorno se instaló Docker Engine y Docker Compose, los cuales permitieron desplegar un cluster distribuido de Apache Spark compuesto por un Spark Master y dos Spark Workers. Para gestionar el cluster se utilizaron los scripts de Spark (start-master.sh, start-worker.sh) además de un script personalizado (start_spark_cluster.sh). Finalmente, el análisis de datos y el experimento de machine learning fueron ejecutados con PySpark dentro de contenedores basados en la imagen jupyter/pyspark-notebook.
