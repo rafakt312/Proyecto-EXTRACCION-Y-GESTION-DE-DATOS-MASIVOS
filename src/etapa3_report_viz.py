@@ -128,7 +128,12 @@ def generate_html(summary, label_img, timing_img):
 
 def load_optional_csv(name):
     path = os.path.join(REPORT_DIR, name)
-    return pd.read_csv(path) if os.path.exists(path) else None
+    if not os.path.exists(path):
+        return None
+    df = pd.read_csv(path)
+    # Normalizar nombres de columna (trim)
+    df.columns = [c.strip() for c in df.columns]
+    return df
 
 
 def write_text_summary(summary, timing_img, dist_df, theft_df=None, state_df=None):
@@ -149,18 +154,24 @@ def write_text_summary(summary, timing_img, dist_df, theft_df=None, state_df=Non
         theft_lines = [f"  {r['state']}: {r['count']}" for r in theft_rows]
 
     state_lines = []
+    per_type_lines = {}
     if state_df is not None and not state_df.empty:
-        # Mostrar top 10 por THEFT y VIOLENCE (si existen las columnas)
+        # Mostrar top combinado
         focus = ["THEFT", "VIOLENCE", "SEX", "DRUG"]
         cols = [c for c in focus if c in state_df.columns]
         if cols:
             sdf = state_df[["state"] + cols].copy()
-            # ordenar por THEFT si existe, si no por primera col
             order_col = "THEFT" if "THEFT" in cols else cols[0]
             sdf = sdf.sort_values(order_col, ascending=False).head(10)
             for _, row in sdf.iterrows():
                 parts = [f"{c}={int(row[c])}" for c in cols]
                 state_lines.append(f"  {row['state']}: " + ", ".join(parts))
+        # Per-type lists
+        for typ in ["THEFT", "VIOLENCE", "SEX", "DRUG", "OTHER"]:
+            if typ in state_df.columns:
+                sdf = state_df[["state", typ]].copy()
+                sdf = sdf.sort_values(typ, ascending=False).head(10)
+                per_type_lines[typ] = [f"  {row['state']}: {int(row[typ])}" for _, row in sdf.iterrows()]
 
 
     lines = [
@@ -199,6 +210,12 @@ def write_text_summary(summary, timing_img, dist_df, theft_df=None, state_df=Non
         lines.append("")
         lines.append("Tipos clave por estado (top 10 ordenado):")
         lines.extend(state_lines)
+    for typ in ["THEFT", "VIOLENCE", "SEX", "DRUG", "OTHER"]:
+        rows = per_type_lines.get(typ)
+        if rows:
+            lines.append("")
+            lines.append(f"{typ} por estado (top 10):")
+            lines.extend(rows)
 
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
