@@ -62,3 +62,16 @@ Reinicio Limpio
 Notas De Rendimiento
 - LR (13 min en 2 workers de 1 core/1 GB c/u; CSV ~1.5 GB).
 - RF (50–60 min con misma configuración; mejor Accuracy/F1-score).
+
+Etapa 5 - Benchmark de escalamiento
+- Clusters: 1 master + N workers (usar --scale spark-worker=N en docker-compose).
+- Levantar ejemplo: docker-compose up -d --scale spark-worker=4 (ajusta N=2/4/8).
+- Workload pesado: src/etapa3_mllib_clasificacion_rf.py.
+- Benchmark: python scripts/etapa5_benchmark.py --workers 2 4 8 --runs 3
+  - Salidas por config: data/reports/etapa5_times_workers{N}.json y .csv.
+  - Copias por corrida: data/reports/etapa5_run_workers{N}_iter{i}.json.
+  - Resumen global: data/reports/etapa5_times_all.json.
+- Graficas: python scripts/etapa5_plot.py
+  - Genera data/reports/etapa5_times_workers{N}.png y etapa5_times_avg.png.
+- UI master: http://localhost:8080 para verificar N workers conectados.
+
