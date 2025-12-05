@@ -5,6 +5,7 @@ import statistics
 import subprocess
 import time
 from pathlib import Path
+from typing import Optional
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -19,7 +20,7 @@ def run_cmd(cmd, check=True):
     return result
 
 
-def extract_runtime(summary_path: Path) -> float | None:
+def extract_runtime(summary_path: Path) -> Optional[float]:
     """Extract total_runtime_seconds from RF summary."""
     if not summary_path.exists():
         return None
