@@ -5,7 +5,7 @@ import statistics
 import subprocess
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Dict, List, Optional
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -35,8 +35,8 @@ def extract_runtime(summary_path: Path) -> Optional[float]:
     return None
 
 
-def benchmark_config(workers: int, runs: int):
-    records = []
+def benchmark_config(workers: int, runs: int) -> List[Dict]:
+    records: List[Dict] = []
 
     # Escalar workers (master se levanta automáticamente)
     run_cmd(f"docker-compose up -d --scale spark-worker={workers}")
@@ -75,7 +75,7 @@ def benchmark_config(workers: int, runs: int):
     return records
 
 
-def save_results(workers: int, records: list[dict]):
+def save_results(workers: int, records: List[Dict]):
     runtimes = [r["runtime_seconds"] for r in records]
     stats = {
         "workers": workers,
