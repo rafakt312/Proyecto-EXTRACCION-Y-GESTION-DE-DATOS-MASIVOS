@@ -74,4 +74,12 @@ Etapa 5 - Benchmark de escalamiento
 - Graficas: python scripts/etapa5_plot.py
   - Genera data/reports/etapa5_times_workers{N}.png y etapa5_times_avg.png.
 - UI master: http://localhost:8080 para verificar N workers conectados.
+- Nota: en el host actual solo se ejecutaron las configuraciones de 2 y 4 workers (8 no completó ejecuciones estables pese a tener 12 GB asignados a Docker); los CSV/PNG reflejan 2 y 4.
+
+Comandos usados (resumen)
+- Levantar cluster escalable: `docker-compose up -d --scale spark-worker=4` (ajusta N=2/4/8).
+- Benchmark estándar (3 corridas por config): `python scripts/etapa5_benchmark.py --workers 2 4 8 --runs 3`
+- Benchmark reducido (ejemplo, solo 4 workers): `python scripts/etapa5_benchmark.py --workers 4 --runs 3`
+- Gráficas desde resultados generados: `python scripts/etapa5_plot.py`
+- Bajar cluster: `docker-compose down`
 

@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Dict, List
 
 import matplotlib.pyplot as plt
 
@@ -8,14 +9,14 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 REPORTS_DIR = REPO_ROOT / "data" / "reports"
 
 
-def load_stats(workers: int):
+def load_stats(workers: int) -> Dict:
     path = REPORTS_DIR / f"etapa5_times_workers{workers}.json"
     if not path.exists():
         raise FileNotFoundError(f"No existe {path}")
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def plot_runs(workers: int, stats: dict):
+def plot_runs(workers: int, stats: Dict):
     runs = stats["records"]
     xs = [r["run"] for r in runs]
     ys = [r["runtime_seconds"] for r in runs]
@@ -33,7 +34,7 @@ def plot_runs(workers: int, stats: dict):
     print(f"Gráfico guardado: {outfile}")
 
 
-def plot_comparativo(stats_list: list[dict]):
+def plot_comparativo(stats_list: List[Dict]):
     workers = [s["workers"] for s in stats_list]
     avgs = [s["avg_seconds"] for s in stats_list]
 
@@ -54,7 +55,7 @@ def plot_comparativo(stats_list: list[dict]):
 
 
 def main():
-    stats_list = []
+    stats_list: List[Dict] = []
     for w in [2, 4, 8]:
         try:
             st = load_stats(w)
@@ -63,7 +64,6 @@ def main():
         except FileNotFoundError:
             print(f"Saltando {w} workers: no hay datos")
     if stats_list:
-        # Ordenar por número de workers
         stats_list = sorted(stats_list, key=lambda s: s["workers"])
         plot_comparativo(stats_list)
 
