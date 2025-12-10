@@ -21,7 +21,7 @@ def run_cmd(cmd, check=True):
 
 
 def extract_runtime(summary_path: Path) -> Optional[float]:
-    """Extract total_runtime_seconds from RF summary."""
+    """Extrae total_runtime_seconds del summary de RF, o suma timings si no esta."""
     if not summary_path.exists():
         return None
     try:
